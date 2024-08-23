@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "674821593083",
+    "firebase_url": "https://github-eddce-default-rtdb.firebaseio.com",
+    "project_id": "github-eddce",
+    "storage_bucket": "github-eddce.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:674821593083:android:3c91d7c30a634b8d455d5e",
+        "android_client_info": {
+          "package_name": "realfz.flutter.telegram.telegram"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBUmBPwc0iLD5hlyxLJgVlHd4K_30b8IyA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
