@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:telegram/color.dart';
+import 'package:telegram/pages/login.dart';
+import 'package:telegram/provider/authenticator.dart';
 import 'package:telegram/widget/item_list.dart';
 
 class HomePage extends HookConsumerWidget {
@@ -28,7 +30,19 @@ class HomePage extends HookConsumerWidget {
             ),
 
             leading: TextButton(
-              onPressed: () {},
+              onPressed: () async {
+                final nContext = context;
+                String passable = await ref.read(authFirebaseProvider.notifier).logout();
+                if (passable == 'pass' && nContext.mounted) {
+                  Navigator.of(nContext).pushReplacement(
+                    PageRouteBuilder(
+                      pageBuilder: (context, animation, secondaryAnimation) {
+                        return const LoginPage();
+                      },
+                    ),
+                  );
+                }
+              },
               child: const Text(
                 'Edit',
                 style: TextStyle(

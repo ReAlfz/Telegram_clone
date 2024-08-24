@@ -1,17 +1,18 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
-final authFirebaseProvider = StateNotifierProvider<AuthConfig, bool>((ref) {
-  return AuthConfig(FirebaseAuth.instance);
+final authFirebaseProvider = StateNotifierProvider<AuthConfigure, User?>((ref) {
+  return AuthConfigure(FirebaseAuth.instance);
 });
 
-class AuthConfig extends StateNotifier<bool> {
+class AuthConfigure extends StateNotifier<User?> {
   final FirebaseAuth auth;
 
-  AuthConfig(this.auth) : super(false);
+  AuthConfigure(this.auth) : super(auth.currentUser) {
+    auth.authStateChanges().listen((event) => state = event);
+  }
 
   Future<String> register({required String email, required String password}) async {
-    state = true;
     try {
       await auth.createUserWithEmailAndPassword(
         email: email,
@@ -26,15 +27,12 @@ class AuthConfig extends StateNotifier<bool> {
         default:
           return e.code;
       }
-    } finally {
-      state = false;
     }
 
     return 'pass';
   }
 
   Future<String> login({required String email, required String password}) async {
-    state = true;
     try {
       await auth.signInWithEmailAndPassword(
         email: email,
@@ -49,14 +47,19 @@ class AuthConfig extends StateNotifier<bool> {
         default:
           return e.code;
       }
-    } finally {
-      state = false;
     }
 
     return 'pass';
   }
 
-  Future<void> logout() async {
-    await auth.signOut();
+  Future<String> logout() async {
+    try {
+      await auth.signOut();
+      return 'pass';
+    } catch (e) {
+      print(e);
+    }
+
+    return 'out';
   }
 }

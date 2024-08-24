@@ -2,10 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:telegram/color.dart';
 
 class LoginTextField extends StatelessWidget {
-  const LoginTextField({super.key, required this.hintText, required this.controller, required this.title});
   final String hintText;
   final String title;
   final TextEditingController controller;
+
+  const LoginTextField({
+    super.key,
+    required this.hintText,
+    required this.controller,
+    required this.title,
+  });
 
   @override
   Widget build(BuildContext context) {
