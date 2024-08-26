@@ -2,10 +2,8 @@ import 'dart:math';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:intl/intl.dart';
 import 'package:telegram/model/chat.dart';
 import 'package:telegram/model/user.dart';
-import 'package:uuid/uuid.dart';
 
 final userCloudProvider =
 StateNotifierProvider<CloudUserConfig, AsyncValue<List<UserModel>>>(

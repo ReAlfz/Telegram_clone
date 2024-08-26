@@ -5,7 +5,6 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:telegram/color.dart';
 import 'package:telegram/model/user.dart';
-import 'package:telegram/provider/database.dart';
 
 class ChatPage extends HookConsumerWidget {
   final UserModel user;
