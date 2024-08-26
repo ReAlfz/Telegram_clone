@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:telegram/color.dart';
-import 'package:telegram/pages/home.dart';
+import 'package:telegram/pages/home_page.dart';
 import 'package:telegram/provider/authenticator.dart';
 import 'package:telegram/widget/login_container.dart';
 
@@ -23,14 +23,16 @@ class LoginPage extends HookConsumerWidget {
 
     useEffect(() {
       if (authState != null) {
-        WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
-          Navigator.of(context).pushReplacement(
-            PageRouteBuilder(
-              pageBuilder: (context, animation, secondaryAnimation) {
-                return const HomePage();
-              },
-            ),
-          );
+        Future.microtask(() {
+          if (context.mounted) {
+            Navigator.of(context).pushReplacement(
+              PageRouteBuilder(
+                pageBuilder: (context, animation, secondaryAnimation) {
+                  return HomePage(uid: authState.uid);
+                },
+              ),
+            );
+          }
         });
       }
       return null;
@@ -39,6 +41,7 @@ class LoginPage extends HookConsumerWidget {
     return Scaffold(
       body: Center(
         child: SingleChildScrollView(
+          scrollDirection: Axis.vertical,
           padding: EdgeInsets.zero,
           physics: const BouncingScrollPhysics(),
           child: Column(

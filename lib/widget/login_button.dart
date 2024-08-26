@@ -3,7 +3,7 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:telegram/color.dart';
-import 'package:telegram/pages/home.dart';
+import 'package:telegram/pages/home_page.dart';
 import 'package:telegram/provider/authenticator.dart';
 import 'package:telegram/provider/database.dart';
 
@@ -25,13 +25,6 @@ class LoginButton extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-
-    useEffect(() {
-      return null;
-    }, [
-      loading.dispose
-    ]);
-
     return ElevatedButton(
       style: ElevatedButton.styleFrom(
         foregroundColor: ColorThemes.white,
@@ -78,17 +71,20 @@ class LoginButton extends HookConsumerWidget {
           password: passwordController.text,
         );
 
-        if (passable == 'pass') {
-          await ref.read(dataFirebaseProvider.notifier).createUser(
-            ref.watch(authFirebaseProvider.notifier).auth.currentUser?.uid,
+        final user = ref.read(authFirebaseProvider.notifier).auth.currentUser;
+
+        if (user != null) {
+          await ref.read(userCloudProvider.notifier).createUser(
+            uid: user.uid,
+            username: usernameController.text,
           );
         }
 
-        if (passable == 'pass' && nContext.mounted) {
+        if (user?.uid != null && nContext.mounted && passable == 'pass') {
           Navigator.of(nContext).push(
             PageRouteBuilder(
               pageBuilder: (context, animation, secondaryAnimation) {
-                return const HomePage();
+                return HomePage(uid: user?.uid,);
               },
             ),
           );
