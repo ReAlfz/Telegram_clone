@@ -1,65 +1,87 @@
+import 'dart:async';
+
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
-final authFirebaseProvider = StateNotifierProvider<AuthConfigure, User?>((ref) {
-  return AuthConfigure(FirebaseAuth.instance);
-});
 
-class AuthConfigure extends StateNotifier<User?> {
-  final FirebaseAuth auth;
+final authFirebaseProvider = NotifierProvider<AuthConfigure, User?>(
+        () => AuthConfigure()
+);
 
-  AuthConfigure(this.auth) : super(auth.currentUser) {
+class AuthConfigure extends Notifier<User?> {
+  final FirebaseAuth auth = FirebaseAuth.instance;
+
+  @override
+  build() {
     auth.authStateChanges().listen((event) => state = event);
+    return auth.currentUser;
   }
 
-  Future<String> register({required String email, required String password}) async {
+  Future<void> register({required String email, required String password}) async {
+    String getError = "";
     try {
       await auth.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
-    } on FirebaseAuthException catch (e) {
-      switch (e.code) {
-        case 'weak-password':
-          return 'The password provided is too weak';
-        case 'email-already-in-use':
-          return 'The password provided is too weak';
-        default:
-          return e.code;
-      }
-    }
 
-    return 'pass';
+    } on FirebaseAuthException catch (error) {
+      switch (error.code) {
+        case 'weak-password':
+          getError = 'The password provided is too weak';
+          break;
+        case 'email-already-in-use':
+          getError = 'The password provided is too weak';
+        default:
+          getError = error.code;
+      }
+
+      Fluttertoast.showToast(
+        msg: getError,
+        fontSize: 16,
+        gravity: ToastGravity.BOTTOM,
+        toastLength: Toast.LENGTH_LONG,
+      );
+    }
   }
 
-  Future<String> login({required String email, required String password}) async {
+  Future<void> login({required String email, required String password}) async {
+    String getError = "";
     try {
       await auth.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
-    } on FirebaseAuthException catch (e) {
-      switch (e.code) {
+    } on FirebaseAuthException catch (error) {
+      switch (error.code) {
         case 'user-not-found':
-          return 'Email or password wrong';
+          getError = 'Email or password wrong';
         case 'wrong-password':
-          return 'Email or password wrong';
+          getError = 'Email or password wrong';
         default:
-          return e.code;
+          getError = error.code;
       }
-    }
 
-    return 'pass';
+      Fluttertoast.showToast(
+        msg: getError,
+        fontSize: 16,
+        gravity: ToastGravity.BOTTOM,
+        toastLength: Toast.LENGTH_LONG,
+      );
+    }
   }
 
-  Future<String> logout() async {
+  Future<void> logout() async {
     try {
       await auth.signOut();
-      return 'pass';
-    } catch (e) {
-      print(e);
+    } on FirebaseAuthException catch (error) {
+      Fluttertoast.showToast(
+        msg: error.code,
+        fontSize: 16,
+        gravity: ToastGravity.BOTTOM,
+        toastLength: Toast.LENGTH_LONG,
+      );
     }
-
-    return 'out';
   }
 }

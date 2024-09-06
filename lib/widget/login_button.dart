@@ -60,7 +60,7 @@ class LoginButton extends HookConsumerWidget {
           return;
         }
 
-        String passable = (keys)
+        (keys)
             ? await ref.read(authFirebaseProvider.notifier).login(
           email: emailController.text,
           password: passwordController.text,
@@ -73,26 +73,26 @@ class LoginButton extends HookConsumerWidget {
         final user = ref.read(authFirebaseProvider.notifier).auth.currentUser;
 
         if (user != null) {
-          await ref.read(userCloudProvider.notifier).createUser(
-            uid: user.uid,
-            username: usernameController.text,
-          );
-        }
+          if (!keys) {
+            await ref.read(userCloudProvider.notifier).createUser(
+              uid: user.uid,
+              username: usernameController.text,
+            );
+          }
 
-        if (user?.uid != null && nContext.mounted && passable == 'pass') {
-          Navigator.of(nContext).push(
-            PageRouteBuilder(
-              pageBuilder: (context, animation, secondaryAnimation) {
-                return HomePage(uid: user?.uid,);
-              },
-            ),
-          );
+          if (nContext.mounted) {
+            loading.value = false;
+            Navigator.of(nContext).pushReplacement(
+              PageRouteBuilder(
+                pageBuilder: (context, animation, secondaryAnimation) {
+                  return HomePage(uid: user.uid,);
+                },
+              ),
+            );
+          }
         } else {
-          Fluttertoast.showToast(
-            msg: passable,
-            toastLength: Toast.LENGTH_SHORT,
-            gravity: ToastGravity.BOTTOM,
-          );
+          loading.value = false;
+          return;
         }
       },
     );

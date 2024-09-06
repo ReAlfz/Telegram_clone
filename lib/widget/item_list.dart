@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:telegram/color.dart';
 import 'package:telegram/model/user.dart';
 import 'package:telegram/pages/chat_page.dart';
+import 'package:telegram/provider/database.dart';
 
 class ItemList extends StatelessWidget {
   final UserModel data;
@@ -17,7 +18,7 @@ class ItemList extends StatelessWidget {
             pageBuilder: (context, animation, secondaryAnimation) {
               return ChatPage(
                 user: data,
-                currentUid: currentUid!,
+                params: Params(currentUid: currentUid!, fromUid: data.uid),
               );
             },
           ),

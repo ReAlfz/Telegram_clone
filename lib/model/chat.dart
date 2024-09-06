@@ -1,10 +1,14 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 class ChatModel {
   final String text, fromUid, uid;
-  final int timestamp;
+  final bool sender;
+  final Timestamp timestamp;
 
   const ChatModel({
     required this.uid,
     required this.fromUid,
+    required this.sender,
     required this.text,
     required this.timestamp,
   });
@@ -13,6 +17,7 @@ class ChatModel {
     return {
       'uid': uid,
       'fromUid': fromUid,
+      'sender': sender,
       'text': text,
       'timestamp': timestamp
     };
@@ -20,10 +25,11 @@ class ChatModel {
 
   factory ChatModel.fromMap(Map<String, dynamic> map) {
     return ChatModel(
-      uid: map['uid'] ?? '',
-      text: map['text'] ?? '',
-      fromUid: map['fromUid']?? '',
-      timestamp: map['timestamp']?? 0,
+      uid: map['uid'],
+      text: map['text'],
+      fromUid: map['fromUid'],
+      sender: map['sender'],
+      timestamp: map['timestamp'],
     );
   }
 }
