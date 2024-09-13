@@ -4,13 +4,19 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:telegram/color.dart';
-import 'package:telegram/model/user.dart';
+import 'package:telegram/model/user_model.dart';
 import 'package:telegram/provider/database.dart';
 
 class ChatPage extends HookConsumerWidget {
-  final UserModel user;
+  final UserModel fromUser;
+  final UserModel currentUser;
   final Params params;
-  const ChatPage({super.key, required this.user, required this.params});
+  const ChatPage({
+    super.key,
+    required this.fromUser,
+    required this.params,
+    required this.currentUser
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -22,7 +28,7 @@ class ChatPage extends HookConsumerWidget {
         backgroundColor: ColorThemes.white,
         centerTitle: true,
         title: Text(
-          user.username,
+          fromUser.username,
           style: const TextStyle(
             fontSize: 22.5,
             color: ColorThemes.black,
@@ -36,7 +42,7 @@ class ChatPage extends HookConsumerWidget {
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               image: DecorationImage(
-                image: NetworkImage(user.icon),
+                image: NetworkImage(fromUser.icon),
                 fit: BoxFit.cover,
               ),
             ),
@@ -49,7 +55,8 @@ class ChatPage extends HookConsumerWidget {
             color: ColorThemes.black,
           ),
           onPressed: () {
-            Navigator.of(context).pop();
+            ref.refresh(userCloudProviderV2(params.currentUid));
+            Navigator.of(context).popUntil((route) => route.isFirst);
           },
         ),
       ),
@@ -158,6 +165,8 @@ class ChatPage extends HookConsumerWidget {
                         ),
                         onPressed: () async {
                           ref.read(chatCloudProvider(params).notifier).createData(
+                            currentUser: currentUser,
+                            fromUser: fromUser,
                             text: textController.text,
                           ).then((value) => textController.clear());
                         },

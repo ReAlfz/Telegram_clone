@@ -19,7 +19,7 @@ class UserModel {
     };
   }
 
-  factory UserModel.fromMap(DocumentSnapshot map) {
+  factory UserModel.fromMap(Map<String, dynamic> map) {
     return UserModel(
       uid: map['uid'],
       icon: map['icon'],

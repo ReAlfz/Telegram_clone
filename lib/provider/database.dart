@@ -3,57 +3,58 @@ import 'dart:math';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:telegram/model/chat.dart';
-import 'package:telegram/model/user.dart';
+import 'package:telegram/model/chat_model.dart';
+import 'package:telegram/model/user_model.dart';
 import 'package:uuid/uuid.dart';
 
-final userCloudProvider = AsyncNotifierProvider<CloudUserConfig, List<UserModel>>(
+final userCloudProvider = AsyncNotifierProvider.family<CloudUserConfig, List<UserModel>, String>(
       () => CloudUserConfig(),
 );
 
-class CloudUserConfig extends AsyncNotifier<List<UserModel>> {
-  final List<UserModel> list = [];
+class CloudUserConfig extends FamilyAsyncNotifier<List<UserModel>, String> {
+  String currentUid = "";
   final cloudStore = FirebaseFirestore.instance.collection('telegram');
 
   @override
-  FutureOr<List<UserModel>> build() async {
-    return await getUser();
+  Future<List<UserModel>> build(String arg) async {
+    currentUid = arg;
+    return await getAddList();
   }
 
-  Future<void> getList(UserModel data) async {
-    try {
-      list.add(data);
-      state = await AsyncValue.guard(() async => list);
-    } catch (error, stack) {
-      state = AsyncError(error, stack);
-    }
-  }
-
-  Future<List<UserModel>> getUser() async {
+  Future<List<UserModel>> getAddList() async {
     try {
       final reference = await cloudStore.get();
-      final data = reference.docs.map(
-              (element) => UserModel.fromMap(element)
+      final list = reference.docs.map(
+              (element) => UserModel.fromMap(element.data())
+      ).where(
+              (element) => element.uid != currentUid
       ).toList();
-      state = await AsyncValue.guard(() async {
-        list.addAll(data);
-        return list;
-      });
-
       return list;
-    } catch(error, stack) {
+    } catch (error, stack) {
       state = AsyncError(error, stack);
       return [];
     }
   }
 
-  Future<void> createUser({required String? uid, required String username}) async {
-    final reference = cloudStore.doc(uid);
-    await reference.set({
-      'uid': uid,
-      'username': username,
-      'icon': icon[Random().nextInt(icon.length)],
-    });
+  Future<UserModel?> getUser({required String currentUid}) async {
+    try {
+      final reference = await cloudStore.doc(currentUid).get();
+      UserModel userModel = UserModel.fromMap(reference.data()!);
+      return userModel;
+    } catch(error, stack) {
+      state = AsyncError(error, stack);
+      return null;
+    }
+  }
+
+  Future<void> createUser({required String username}) async {
+    final reference = cloudStore.doc(currentUid);
+    UserModel userModel =  UserModel(
+      icon: icon[Random().nextInt(icon.length)],
+      username: username,
+      uid: currentUid,
+    );
+    await reference.set(userModel.toMap());
   }
 
   Future<void> clearUser() async {
@@ -68,8 +69,41 @@ class CloudUserConfig extends AsyncNotifier<List<UserModel>> {
   ];
 }
 
+final userCloudProviderV2 = AsyncNotifierProvider.family<CloudUserConfigV2, List<UserModel>, String>(
+      () => CloudUserConfigV2(),
+);
 
+// -------------------------------------------------------------------------- //
 
+class CloudUserConfigV2 extends FamilyAsyncNotifier<List<UserModel>, String>{
+  String currentUid = "";
+  final cloudStore = FirebaseFirestore.instance.collection('telegram');
+
+  @override
+  FutureOr<List<UserModel>> build(String arg) async {
+    currentUid = arg;
+    return await getHomeList();
+  }
+
+  Future<List<UserModel>> getHomeList() async {
+    try {
+      final reference = await cloudStore
+          .doc(currentUid)
+          .collection("list-user-chat")
+          .get();
+      final list = reference.docs.map(
+              (element) => UserModel.fromMap(element.data())
+      ).toList();
+      state = await AsyncValue.guard(() async => list);
+      return list;
+    } catch (error, stack) {
+      state = AsyncError(error, stack);
+      return [];
+    }
+  }
+}
+
+// -------------------------------------------------------------------------- //
 
 final chatCloudProvider = AsyncNotifierProvider.family<CloudChatConfig, List<ChatModel>, Params>(
       () => CloudChatConfig()
@@ -97,14 +131,14 @@ class CloudChatConfig extends FamilyAsyncNotifier<List<ChatModel>, Params> {
     required String fromUid,
   }) async {
     try {
-      final reference = await cloudStore.doc(currentUid).collection(fromUid)
+      final reference = await cloudStore.doc(params.currentUid)
+          .collection("list-user-chat")
+          .doc(params.fromUid)
+          .collection("chat")
           .orderBy('timestamp', descending: true).get();
 
       List<ChatModel> data = reference.docs.map(
-              (element) {
-                print(element.data());
-                return ChatModel.fromMap(element.data());
-              }
+              (element) => ChatModel.fromMap(element.data())
       ).toList();
       return data;
     } catch (error) {
@@ -112,13 +146,45 @@ class CloudChatConfig extends FamilyAsyncNotifier<List<ChatModel>, Params> {
     }
   }
 
+  Future<void> createUserForCurrentChat({required UserModel fromUser}) async {
+    final reference = cloudStore
+        .doc(params.currentUid)
+        .collection("list-user-chat")
+        .doc(params.fromUid);
+    await reference.set(fromUser.toMap());
+  }
+
+  Future<void> createUserForFromChat({required UserModel fromUser}) async {
+    final reference = cloudStore
+        .doc(params.fromUid)
+        .collection("list-user-chat")
+        .doc(params.currentUid);
+    await reference.set(fromUser.toMap());
+  }
+
   Future<void> createData({
+    required UserModel fromUser,
+    required UserModel currentUser,
     required String text
   }) async {
     try {
       String uuid = const Uuid().v4();
-      final currentUidReference = cloudStore.doc(params.currentUid).collection(params.fromUid).doc(uuid);
-      final fromUidReference = cloudStore.doc(params.fromUid).collection(params.currentUid).doc(uuid);
+      createUserForCurrentChat(fromUser: fromUser);
+      createUserForFromChat(fromUser: currentUser);
+      final currentUidReference = cloudStore
+          .doc(params.currentUid)
+          .collection("list-user-chat")
+          .doc(params.fromUid)
+          .collection("chat")
+          .doc(uuid);
+
+
+      final fromUidReference = cloudStore
+          .doc(params.fromUid)
+          .collection("list-user-chat")
+          .doc(params.currentUid)
+          .collection("chat")
+          .doc(uuid);
 
       final currentData = ChatModel(
         text: text,
@@ -151,12 +217,20 @@ class CloudChatConfig extends FamilyAsyncNotifier<List<ChatModel>, Params> {
   }
 
   Future<ChatModel> addChats() async {
-    final lastDataReference = await cloudStore.doc(params.currentUid)
-        .collection(params.fromUid).orderBy('timestamp', descending: true)
+    final lastDataReference = await cloudStore
+        .doc(params.currentUid)
+        .collection("list-user-chat")
+        .doc(params.fromUid)
+        .collection("chat")
+        .orderBy('timestamp', descending: true)
         .limit(1).get();
 
     ChatModel data = ChatModel.fromMap(lastDataReference.docs.first.data());
     return data;
+  }
+
+  String lastText() {
+    return list[list.length - 1].text;
   }
 }
 

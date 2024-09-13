@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:telegram/color.dart';
+import 'package:telegram/model/user_model.dart';
 import 'package:telegram/pages/home_page.dart';
 import 'package:telegram/provider/authenticator.dart';
 import 'package:telegram/provider/database.dart';
@@ -74,8 +75,7 @@ class LoginButton extends HookConsumerWidget {
 
         if (user != null) {
           if (!keys) {
-            await ref.read(userCloudProvider.notifier).createUser(
-              uid: user.uid,
+            await ref.read(userCloudProvider(user.uid).notifier).createUser(
               username: usernameController.text,
             );
           }
@@ -85,7 +85,7 @@ class LoginButton extends HookConsumerWidget {
             Navigator.of(nContext).pushReplacement(
               PageRouteBuilder(
                 pageBuilder: (context, animation, secondaryAnimation) {
-                  return HomePage(uid: user.uid,);
+                  return HomePage(uid: user.uid);
                 },
               ),
             );
